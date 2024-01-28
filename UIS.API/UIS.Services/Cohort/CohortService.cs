@@ -43,13 +43,13 @@ namespace UIS.Services.Cohort
 
                 // If there are no students from the CSV file mathing the current cohort, skip the cohort iteration
                 bool studentsFromCSVContainsCohort = studentsFromCSVGroupedByCohorts.ContainsKey(moodleCohort.name);
-                if (studentsFromCSVContainsCohort == false)
-                {
-                    continue;
-                }
 
                 // Gets the students from the CSV matching the same cohort
-                var studentsFromCsv = studentsFromCSVGroupedByCohorts[moodleCohort.name];
+                var studentsFromCsv = new List<StudentInfoDTO>();
+                if (studentsFromCSVContainsCohort)
+                {
+                    studentsFromCsv=studentsFromCSVGroupedByCohorts[moodleCohort.name]; 
+                }
 
                 // List of student ids from moodle, matching the given cohort
                 var studentsIdsFromMoodle = studentIdsFromMoodle[0].userids ?? throw new Exception();
