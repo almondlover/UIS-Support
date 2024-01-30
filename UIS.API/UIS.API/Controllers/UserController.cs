@@ -192,11 +192,13 @@ namespace UIS.API.Controllers
             return Ok(studentInfo);
         }
         //moodle discord sync 
-        [HttpGet("DiscordSync1")]
-        public async Task<ActionResult<List<UISStudentInfoDTO>>> GetStudentDataFromMoodleAsync()
+        [HttpGet("discord-sync")]
+        public async Task<ActionResult<List<DiscordStudentInfoDTO>>> GetStudentDataFromMoodleAsync()
         {
-            //var studentInfo = new List<UISStudentInfoDTO>();
-            var studentsGroupedByMajor = await _cohortService.GetStudentsGroupedByCohortsAsync(new HttpClient(), "0dc14f4a2c85eadcf1e00618f0d1ec07");
+            
+            var studentsGroupedByMajor = await _cohortService.GetAllStudentsFromMoodleAsync(new HttpClient(), "0dc14f4a2c85eadcf1e00618f0d1ec07");
+            
+            if (studentsGroupedByMajor == null) return BadRequest();
 
             return Ok(studentsGroupedByMajor);
         }

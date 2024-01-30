@@ -15,6 +15,6 @@ namespace UIS.Services.Cohort
         Task SaveStudentsInfoAsync(List<StudentInfoDTO> students);
         List<StudentInfoDTO> ExtractStudentDataFromCSV(IFormFile csvFile);
         Task<StudentInfoDTO?> GetUserByIdAsync(HttpClient client, int userId, string jwt);
-        Task<List<UISStudentInfoDTO>> GetStudentsGroupedByCohortsAsync(HttpClient client, string jwt);
+        Task<List<DiscordStudentInfoDTO>?> GetAllStudentsFromMoodleAsync(HttpClient client, string jwt);
     }
 }

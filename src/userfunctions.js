@@ -3,7 +3,7 @@ const {delay, roleNumberBachelor, bachelorRoles} = require('./utilites.js');
 
 async function syncUsers(interaction,client,bachelorRoles,masterRoles){
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-  fetch('https://localhost:7059/api/User/DiscordSync1')
+  fetch('https://localhost:7059/api/User/discord-sync')
   .then(response => {
       if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -25,9 +25,9 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
                 }
                 else 
                 {
-                  const names = student.names.split(" ");
-                  const username = `${names[0]} ${names[names.length-1]} (${student.course}. курс)`;
-                  const degree = student.oks;
+                  const names = student.names;
+                  const username = `${names} (${student.course}. курс)`;
+                  const degree = student.degree;
                   //console.log(JSON.stringify(result))
                       setName(member[0],username,myguild);
                     if(degree === "Бакалавър"){
@@ -101,7 +101,7 @@ return "Success";
 
 function clearRolesAndUsername(guildMember, guild)
 {
-  if (guild.ownerId==guildMember.user.id) {console.log("neposlushen\n\nneposlushen"); return;}
+  //clears all roles sans @everyone/Administrator and server name
   const roles=guildMember.roles.cache.filter(role => role.name != "@everyone" && role.name != "Administrator");
   if(roles.cache===undefined) return;
   guildMember.roles.remove(roles).then(()=>{
@@ -182,8 +182,7 @@ function setRole(role,discordID,guild){
   async function removeRoles(discordID,role,myguild){
     const roleAsNumber = roleNumberBachelor[role];
     myguild.members.fetch(discordID)
-    .then(member=>{
-      if (myguild.ownerId==member.user.id) {console.log("neposlushen\n\nneposlushen"); return;}
+    .then(member=>{  
       const allRoles = member.roles.cache;
       allRoles.forEach(element => {
         const currentRole = roleNumberBachelor[element.name];

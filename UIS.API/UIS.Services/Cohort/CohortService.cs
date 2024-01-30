@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using AutoMapper;
 using UIS.DATA;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Metadata.Ecma335;
 
 namespace UIS.Services.Cohort
 {
@@ -328,34 +329,42 @@ namespace UIS.Services.Cohort
             return groupedRecords;
         }
 
-        public async Task<List<UISStudentInfoDTO>> GetStudentsGroupedByCohortsAsync(HttpClient client, string jwt)
+        public async Task<List<DiscordStudentInfoDTO>?> GetAllStudentsFromMoodleAsync(HttpClient client, string jwt)
         {
-            var allCohorts = await GetMoodleCohortsAsync(client, jwt);
-            var result = new List<UISStudentInfoDTO>();
+            //pulls all moodle cohorts
+            var allMoodleCohorts = await GetMoodleCohortsAsync(client, jwt);
 
-            foreach (var cohort in allCohorts)
+            List<DiscordStudentInfoDTO> result = new List<DiscordStudentInfoDTO>();
+
+            foreach (var cohort in allMoodleCohorts)
             {
                 var studentMoodleIds = (await GetStudentsIDsFromMoodleCohortsAsync(client, cohort.id, jwt))[0].userids;
+                if (studentMoodleIds == null || studentMoodleIds.Count == 0) continue;
 
-                var students = new List<UISStudentInfoDTO>();
+                var students = new List<DiscordStudentInfoDTO>();
 
                 var cohortNameElements = cohort.name.Split('/', StringSplitOptions.TrimEntries);
+                //returns null if the cohort format is incorrect
+                if (cohortNameElements.Count() < 3) return null;
+                //extracts data needed for the discord bot from the cohort name
                 var faculty = cohortNameElements[0];
                 var major = cohortNameElements[1];
                 var year = cohortNameElements[2].Split('-', StringSplitOptions.TrimEntries)[0];
-
+                //iterates through all moodle students by their id
                 foreach (var studentId in studentMoodleIds)
                 {
+                    //fetches moodle user and skips the current iteration if not found
                     var studentFromMoodle = await GetUserByIdAsync(client, studentId, jwt);
-                    var student = new UISStudentInfoDTO();
+                    if (studentFromMoodle == null) continue;
+                    //builds discord data from moodle data
+                    var student = new DiscordStudentInfoDTO();
                     
-                    student.Email = studentFromMoodle.Email;
-                    student.Names = studentFromMoodle.FirstName + " " + studentFromMoodle.LastName;
-                    student.FacultyNumber = studentFromMoodle.Username;
-                    student.Specialty = major;
-                    student.Faculty = faculty;
-                    student.Oks = "Бакалавър";
-                    student.Course = Math.Min(((int)((DateTime.Today - new DateTime(int.Parse(year), 9, 1)).TotalDays))/365+1, 4);
+                    student.names = studentFromMoodle.FirstName + " " + studentFromMoodle.LastName;
+                    student.facultyNumber = studentFromMoodle.Username;
+                    student.specialty = major;
+                    student.faculty = faculty;
+                    student.degree = "Бакалавър";
+                    student.course = Math.Min(((int)((DateTime.Today - new DateTime(int.Parse(year), 9, 1)).TotalDays))/365+1, 4);
                     
                     students.Add(student);
                 }
