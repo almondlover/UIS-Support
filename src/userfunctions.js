@@ -1,4 +1,4 @@
-const {executeQuery, fetchAuthorizedStudent} = require('./database.js');
+const {executeQuery, fetchAuthorizedStudent, facultyDB} = require('./database.js');
 const {delay, roleNumberBachelor, bachelorRoles} = require('./utilites.js');
 
 async function syncUsers(interaction,client,bachelorRoles,masterRoles){
@@ -13,40 +13,57 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
   .then(data => {
       getGuildById(interaction.guild.id,client).then(myguild=>{
         myguild.members.fetch().then(members=>{
+          //iterates through every member to synchronize their data with up-to-date data from moodle cohorts
           for (const member of members)
           {
+            //gets student's data from db if authorized
             fetchAuthorizedStudent(member[0],myguild.id).then(result=>{
               if (result!="") 
               {
-                const student = data.find(element=>element.facultyNumber==result[0].Username)
-                if (student==null)
-                {
-                  clearRolesAndUsername(member[1], myguild);
-                }
-                else 
-                {
-                  const names = student.names;
-                  const username = `${names} (${student.course}. курс)`;
-                  const degree = student.degree;
-                  //console.log(JSON.stringify(result))
+                facultyDB(myguild.name).then(res=>{
+                  //gets instances of this student in all his cohorts
+                  const student = data.filter(element=>element.facultyNumber==result[0].Username&&element.specialty==res[0].Major)
+                  //clears student's roles/server name if he doesn't currently belong to any cohort 
+                  if (student.length===0)
+                  {
+                    clearRolesAndUsername(member[1], myguild);
+                  }
+                  else {
+                    //initializes array to hold student's cohorts iterated through
+                    let studentInfoInCheckedCohorts=Array(0);
+                    student.forEach(element=>{
+                    //checks if this is the highest course the user's enrolled in
+                    const isHighestCourse=(studentInfoInCheckedCohorts.length===0 || studentInfoInCheckedCohorts.find(e=>{
+                      if (e.degree === element.degree) return e.course>element.course;
+                      if (e.degree === "Бакалавър") return true;
+                      return false;
+                      })==undefined)
+                    //only changes username if this is the highest course
+                    if (isHighestCourse)
+                    {
+                      const username = `${element.names} (${element.course}. курс)`;
+                      //console.log(JSON.stringify(result))
                       setName(member[0],username,myguild);
-                    if(degree === "Бакалавър"){
-                      const role = bachelorRoles[student.course];
+                    }
+                    if(element.degree === "Бакалавър"){
+                      const role = bachelorRoles[element.course];
                     getCourseRole(role,myguild).then(role =>{
                       setRole(role,member[0],myguild);
                     }) 
 
-                    removeRoles(member[0],role,myguild);
+                    if (isHighestCourse) removeRoles(member[0],role,myguild);
 
-                    }else if(degree === "Магистър"){
-
-                      const role = masterRoles[student.course];
+                    }else if(element.degree === "Магистър"){
+                      //masters keep their roles from their bachelors'
+                      const role = masterRoles[element.course];
                       getCourseRole(role,myguild).then(role =>{
                         setRole(role,member[0],myguild);
                         
-                    })
-                  }
-                }
+                      })
+                    }
+                    studentInfoInCheckedCohorts.push(element);
+                  })
+                }})
               }
               else {
                 //removes all of the user's roles if not authorized
@@ -101,11 +118,11 @@ return "Success";
 
 function clearRolesAndUsername(guildMember, guild)
 {
+  if (guildMember.user.bot||guild.ownerId==guildMember.user.id) {console.log("neposlushen\n\nneposlushen"); return;}
   //clears all roles sans @everyone/Administrator and server name
-  const roles=guildMember.roles.cache.filter(role => role.name != "@everyone" && role.name != "Administrator");
-  if(roles.cache===undefined) return;
+  let roles=guildMember.roles.cache.filter(role => role.name != "@everyone" && role.name != "Administrator");
   guildMember.roles.remove(roles).then(()=>{
-    guildMember.setNickname(null).then(console.log("user has dropped out"));
+    guildMember.setNickname(null).then(console.log(`${guildMember.user.tag} has dropped out`));
   });
 }
 
@@ -134,7 +151,6 @@ function setRole(role,discordID,guild){
   }
   
   function setName(discordID,username,guild){
-    console.log(discordID);
     guild.members.fetch(discordID)
     .then(member => {
       // Check if the member is found
