@@ -45,6 +45,24 @@ function executeQuery(facultyNumber, guildId) {
     });
   });
 }
+function fetchAuthorizedStudent(discordId, guildId)
+{
+  return new Promise((resolve, reject)=>{
+    const connection=createConnection();
+    connection.connect();
+
+    connection.query(
+      'SELECT Username FROM discorddata INNER JOIN students ON discorddata.StudentId = students.Id WHERE DiscordId = ? AND GuildId = ?',
+      [discordId, guildId],
+      (error, result) => {
+        connection.end();
+
+        if (error) reject(error);
+        else resolve(result);
+      }
+    )
+  })
+}
 
 async function facultyDB(faculty) {
   const connection = createConnection();
@@ -127,5 +145,5 @@ function insertIntoDiscordData(discordData) {
   });
 }
 
-module.exports = {insertIntoDiscordData,checkStudentAuth,discrordDBCheck,facultyDB,executeQuery};
+module.exports = {insertIntoDiscordData,checkStudentAuth,discrordDBCheck,facultyDB,executeQuery,fetchAuthorizedStudent};
 

@@ -1,9 +1,9 @@
-const {executeQuery} = require('./database.js');
+const {executeQuery, fetchAuthorizedStudent} = require('./database.js');
 const {delay, roleNumberBachelor, bachelorRoles} = require('./utilites.js');
 
 async function syncUsers(interaction,client,bachelorRoles,masterRoles){
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-  fetch('https://localhost:7059/api/User/DiscordSync')
+  fetch('https://localhost:7059/api/User/DiscordSync1')
   .then(response => {
       if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -11,41 +11,86 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
       return response.json();
   })
   .then(data => {
-    // Process your data here
-      for(let i = 0;i<data.length;i++ ) {
-        executeQuery(data[i].facultyNumber,interaction.guild.id).then(result=>{
-          if(result != ""){
-            const names = data[i].names.split(" ");
-            const username = `${names[0]} ${names[2]} (${data[i].course}. курс)`;
-            const degree = data[i].oks;
-            console.log(JSON.stringify(result))
-            for(let j=0;j<result.length;j++){
-              getGuildById(interaction.guild.id,client).then(myguild=>{
-                setName(result[j].DiscordId,username,myguild);
-              if(degree === "Бакалавър"){
-                const role = bachelorRoles[data[i].course];
-               getCourseRole(role,myguild).then(role =>{
-                setRole(role,result[j].DiscordId,myguild);
-              }) 
+      getGuildById(interaction.guild.id,client).then(myguild=>{
+        myguild.members.fetch().then(members=>{
+          for (const member of members)
+          {
+            fetchAuthorizedStudent(member[0],myguild.id).then(result=>{
+              if (result!="") 
+              {
+                const student = data.find(element=>element.facultyNumber==result[0].Username)
+                if (student==null)
+                {
+                  clearRolesAndUsername(member[1], myguild);
+                }
+                else 
+                {
+                  const names = student.names.split(" ");
+                  const username = `${names[0]} ${names[names.length-1]} (${student.course}. курс)`;
+                  const degree = student.oks;
+                  //console.log(JSON.stringify(result))
+                      setName(member[0],username,myguild);
+                    if(degree === "Бакалавър"){
+                      const role = bachelorRoles[student.course];
+                    getCourseRole(role,myguild).then(role =>{
+                      setRole(role,member[0],myguild);
+                    }) 
 
-               removeRoles(result[j].DiscordId,role,myguild)
+                    removeRoles(member[0],role,myguild);
 
-              }else if(degree === "Магистър"){
+                    }else if(degree === "Магистър"){
 
-                const role = masterRoles[data[i].course];
-                getCourseRole(role,myguild).then(role =>{
-                  setRole(role,result[j].DiscordId,myguild);
-                  
-              })
-              removeBachelorRoles(result[j].DiscordId,myguild);
-              
-            }
-              })
-            }
+                      const role = masterRoles[student.course];
+                      getCourseRole(role,myguild).then(role =>{
+                        setRole(role,member[0],myguild);
+                        
+                    })
+                  }
+                }
+              }
+              else {
+                //removes all of the user's roles if not authorized
+                clearRolesAndUsername(member[1], myguild);
+              }
+            }).then(() => delay(1000));
           }
         })
-        .then(() => delay(1000));
-      }
+      })
+    // Process your data here
+      // for(let i = 0;i<data.length;i++ ) {
+      //   executeQuery(data[i].facultyNumber,interaction.guild.id).then(result=>{
+      //     if(result != ""){
+      //       const names = data[i].names.split(" ");
+      //       const username = `${names[0]} ${names[names.length-1]} (${data[i].course}. курс)`;
+      //       const degree = data[i].oks;
+      //       console.log(JSON.stringify(result))
+      //       for(let j=0;j<result.length;j++){
+      //         getGuildById(interaction.guild.id,client).then(myguild=>{
+      //           setName(result[j].DiscordId,username,myguild);
+      //         if(degree === "Бакалавър"){
+      //           const role = bachelorRoles[data[i].course];
+      //          getCourseRole(role,myguild).then(role =>{
+      //           setRole(role,result[j].DiscordId,myguild);
+      //         }) 
+
+      //          removeRoles(result[j].DiscordId,role,myguild)
+
+      //         }else if(degree === "Магистър"){
+
+      //           const role = masterRoles[data[i].course];
+      //           getCourseRole(role,myguild).then(role =>{
+      //             setRole(role,result[j].DiscordId,myguild);
+                  
+      //         })
+      //         //removeBachelorRoles(result[j].DiscordId,myguild);
+              
+      //       }
+      //         })
+      //       }
+      //     }
+      //   })
+      //   .then(() => delay(1000));
+      // }
       
   })
   .catch(error => {
@@ -54,6 +99,15 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
 return "Success";
 }
 
+function clearRolesAndUsername(guildMember, guild)
+{
+  if (guild.ownerId==guildMember.user.id) {console.log("neposlushen\n\nneposlushen"); return;}
+  const roles=guildMember.roles.cache.filter(role => role.name != "@everyone" && role.name != "Administrator");
+  if(roles.cache===undefined) return;
+  guildMember.roles.remove(roles).then(()=>{
+    guildMember.setNickname(null).then(console.log("user has dropped out"));
+  });
+}
 
 function setRole(role,discordID,guild){
   // Fetch the member asynchronously
@@ -129,9 +183,11 @@ function setRole(role,discordID,guild){
     const roleAsNumber = roleNumberBachelor[role];
     myguild.members.fetch(discordID)
     .then(member=>{
+      if (myguild.ownerId==member.user.id) {console.log("neposlushen\n\nneposlushen"); return;}
       const allRoles = member.roles.cache;
       allRoles.forEach(element => {
         const currentRole = roleNumberBachelor[element.name];
+        if (currentRole==undefined) return;
         if(roleAsNumber < currentRole){
           member.roles.remove(element)
           console.log(`Role ${element.name} removed for ${member.user.tag}`);

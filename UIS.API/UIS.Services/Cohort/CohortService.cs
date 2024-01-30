@@ -327,5 +327,43 @@ namespace UIS.Services.Cohort
 
             return groupedRecords;
         }
+
+        public async Task<List<UISStudentInfoDTO>> GetStudentsGroupedByCohortsAsync(HttpClient client, string jwt)
+        {
+            var allCohorts = await GetMoodleCohortsAsync(client, jwt);
+            var result = new List<UISStudentInfoDTO>();
+
+            foreach (var cohort in allCohorts)
+            {
+                var studentMoodleIds = (await GetStudentsIDsFromMoodleCohortsAsync(client, cohort.id, jwt))[0].userids;
+
+                var students = new List<UISStudentInfoDTO>();
+
+                var cohortNameElements = cohort.name.Split('/', StringSplitOptions.TrimEntries);
+                var faculty = cohortNameElements[0];
+                var major = cohortNameElements[1];
+                var year = cohortNameElements[2].Split('-', StringSplitOptions.TrimEntries)[0];
+
+                foreach (var studentId in studentMoodleIds)
+                {
+                    var studentFromMoodle = await GetUserByIdAsync(client, studentId, jwt);
+                    var student = new UISStudentInfoDTO();
+                    
+                    student.Email = studentFromMoodle.Email;
+                    student.Names = studentFromMoodle.FirstName + " " + studentFromMoodle.LastName;
+                    student.FacultyNumber = studentFromMoodle.Username;
+                    student.Specialty = major;
+                    student.Faculty = faculty;
+                    student.Oks = "Бакалавър";
+                    student.Course = Math.Min(((int)((DateTime.Today - new DateTime(int.Parse(year), 9, 1)).TotalDays))/365+1, 4);
+                    
+                    students.Add(student);
+                }
+
+                result.AddRange(students);
+
+            }
+            return result;
+        }
     }
 }
