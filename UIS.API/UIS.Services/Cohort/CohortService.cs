@@ -334,7 +334,7 @@ namespace UIS.Services.Cohort
             //pulls all moodle cohorts
             var allMoodleCohorts = await GetMoodleCohortsAsync(client, jwt);
 
-            List<DiscordStudentInfoDTO> result = new List<DiscordStudentInfoDTO>();
+            List<DiscordStudentInfoDTO> allStudentData = new List<DiscordStudentInfoDTO>();
 
             foreach (var cohort in allMoodleCohorts)
             {
@@ -347,9 +347,24 @@ namespace UIS.Services.Cohort
                 //returns null if the cohort format is incorrect
                 if (cohortNameElements.Count() < 3) return null;
                 //extracts data needed for the discord bot from the cohort name
+                //assumes the following cohort naming convention: <faculty> / <specialty> / <year of degree enrollment>[ - <master's>]
                 var faculty = cohortNameElements[0];
                 var major = cohortNameElements[1];
-                var year = cohortNameElements[2].Split('-', StringSplitOptions.TrimEntries)[0];
+                var degree="";
+                //gets year of enrollment and degree
+                var cohortYear = cohortNameElements[2].Split('-', StringSplitOptions.TrimEntries);
+                int year;
+                if (!int.TryParse(cohortYear[0], out year))
+                    return null;
+                //assumes a 4-year bachelor's and 2-year master's; ideally moodle courses would hold data for yof education for obtaining it
+                int maxYears = 4;
+                if (cohortYear.Count() == 1)
+                    degree = "Бакалавър";
+                else
+                {
+                    degree = "Магистър";
+                    maxYears = 2;
+                }
                 //iterates through all moodle students by their id
                 foreach (var studentId in studentMoodleIds)
                 {
@@ -363,16 +378,14 @@ namespace UIS.Services.Cohort
                     student.facultyNumber = studentFromMoodle.Username;
                     student.specialty = major;
                     student.faculty = faculty;
-                    student.degree = "Бакалавър";
-                    student.course = Math.Min(((int)((DateTime.Today - new DateTime(int.Parse(year), 9, 1)).TotalDays))/365+1, 4);
+                    student.degree = degree;
+                    student.course = Math.Min(((int)((DateTime.Today - new DateTime(year, 9, 1)).TotalDays))/365+1, maxYears);
                     
                     students.Add(student);
                 }
-
-                result.AddRange(students);
-
+                allStudentData.AddRange(students);
             }
-            return result;
+            return allStudentData;
         }
     }
 }
