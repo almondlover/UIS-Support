@@ -100,8 +100,9 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
       //           getCourseRole(role,myguild).then(role =>{
       //             setRole(role,result[j].DiscordId,myguild);
                   
+    
       //         })
-      //         //removeBachelorRoles(result[j].DiscordId,myguild);
+      //      //removeBachelorRoles(result[j].DiscordId,myguild);
               
       //       }
       //         })
