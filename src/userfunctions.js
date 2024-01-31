@@ -37,7 +37,7 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
                   setRole(role,result[j].DiscordId,myguild);
                   
               })
-              removeBachelorRoles(result[j].DiscordId,myguild);
+              //removeBachelorRoles(result[j].DiscordId,myguild);
               
             }
               })
@@ -159,7 +159,7 @@ function setRole(role,discordID,guild){
             });
     });
   }
-  
+  //deprecated
   async function removeBachelorRoles(discordID,myguild){
     myguild.members.fetch(discordID)
     .then(member=>{
