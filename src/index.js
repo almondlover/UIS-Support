@@ -150,7 +150,7 @@ app.post('/api/User/discord-info', (req, res) => {
                       getCourseRole(role,myguild).then(role =>{
                         setRole(role,discordID,myguild);
                     })
-                   removeBachelorRoles(discordID,myguild);
+                    removeRoles(discordID,role,myguild)
                     
                   }
                   }

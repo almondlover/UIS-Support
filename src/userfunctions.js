@@ -233,7 +233,7 @@ function setRole(role,discordID,guild){
             });
     });
   }
-  
+  //deprecated
   async function removeBachelorRoles(discordID,myguild){
     myguild.members.fetch(discordID)
     .then(member=>{
