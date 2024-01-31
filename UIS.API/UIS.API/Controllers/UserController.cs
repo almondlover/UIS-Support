@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using UIS.DAL.DTO;
 using HtmlAgilityPack;
+using System.Runtime.CompilerServices;
+using UIS.Services.Cohort;
 
 namespace UIS.API.Controllers
 {
@@ -11,10 +13,12 @@ namespace UIS.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ICohortService _cohortService;
 
-        public UserController(IAuthService authService)
+        public UserController(IAuthService authService, ICohortService cohortService)
         {
             _authService = authService;
+            _cohortService = cohortService;
         }
         
         [HttpGet("discord-info")]
@@ -180,12 +184,25 @@ namespace UIS.API.Controllers
                 return BadRequest();
             }
         }
-
+        //deprecated?
         [HttpGet("DiscordSync")]
         public async Task<ActionResult<List<UISStudentInfoDTO>>> GetStudentDataFromUISAsync()
         {
             var studentInfo = _authService.GetMockedUISStudentInfo();
             return Ok(studentInfo);
+        }
+        //moodle discord sync 
+        [HttpGet("discord-sync")]
+        public async Task<ActionResult<List<DiscordStudentInfoDTO>>> GetStudentDataFromMoodleAsync()
+        {
+            using (var client = new HttpClient())
+            {
+                var studentsGroupedByMajor = await _cohortService.GetAllStudentsFromMoodleAsync(client, "0dc14f4a2c85eadcf1e00618f0d1ec07");
+
+                if (studentsGroupedByMajor == null) return BadRequest();
+
+                return Ok(studentsGroupedByMajor);
+            }
         }
     }
 }
