@@ -184,7 +184,7 @@ namespace UIS.API.Controllers
                 return BadRequest();
             }
         }
-
+        //deprecated?
         [HttpGet("DiscordSync")]
         public async Task<ActionResult<List<UISStudentInfoDTO>>> GetStudentDataFromUISAsync()
         {
@@ -195,12 +195,14 @@ namespace UIS.API.Controllers
         [HttpGet("discord-sync")]
         public async Task<ActionResult<List<DiscordStudentInfoDTO>>> GetStudentDataFromMoodleAsync()
         {
-            
-            var studentsGroupedByMajor = await _cohortService.GetAllStudentsFromMoodleAsync(new HttpClient(), "0dc14f4a2c85eadcf1e00618f0d1ec07");
-            
-            if (studentsGroupedByMajor == null) return BadRequest();
+            using (var client = new HttpClient())
+            {
+                var studentsGroupedByMajor = await _cohortService.GetAllStudentsFromMoodleAsync(client, "0dc14f4a2c85eadcf1e00618f0d1ec07");
 
-            return Ok(studentsGroupedByMajor);
+                if (studentsGroupedByMajor == null) return BadRequest();
+
+                return Ok(studentsGroupedByMajor);
+            }
         }
     }
 }

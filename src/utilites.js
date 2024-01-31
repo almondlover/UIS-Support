@@ -13,14 +13,7 @@ const commands = [
 
 
 
-const roleNumberBachelor = {
-  "Първи Курс - Бакалавър" : 1,
-  "Втори Курс - Бакалавър" : 2,
-  "Трети Курс - Бакалавър" : 3,
-  "Четвърти Курс - Бакалавър" : 4,
-  "authorized" : 0,
-  "Administrator" : 0
-}
+
 
 const bachelorRoles = {
   "1" : "Първи Курс - Бакалавър",
@@ -34,6 +27,16 @@ const masterRoles = {
   "2" : "Втори Курс - Магистър"
 }
 
+const roleNumber = {
+  [bachelorRoles["1"]] : 1,
+  [bachelorRoles["2"]] : 2,
+  [bachelorRoles["3"]] : 3,
+  [bachelorRoles["4"]] : 4,
+  [masterRoles["1"]] : 5,
+  [masterRoles["2"]] : 6,
+  "authorized" : 0,
+  "Administrator" : 0
+}
 
 // Encryption function
 function encryptToURLSafe(text, secretKey) {
@@ -74,4 +77,4 @@ const registerCommands = async (guildId, rest, Routes) => {
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-module.exports = {registerCommands,decryptFromURLSafe,encryptToURLSafe,delay,masterRoles,bachelorRoles,roleNumberBachelor,commands};
+module.exports = {registerCommands,decryptFromURLSafe,encryptToURLSafe,delay,masterRoles,bachelorRoles,roleNumber,commands};

@@ -50,7 +50,7 @@ function fetchAuthorizedStudent(discordId, guildId)
   return new Promise((resolve, reject)=>{
     const connection=createConnection();
     connection.connect();
-
+    //get faculty num of student if he's authorized on the server
     connection.query(
       'SELECT Username FROM discorddata INNER JOIN students ON discorddata.StudentId = students.Id WHERE DiscordId = ? AND GuildId = ?',
       [discordId, guildId],

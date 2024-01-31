@@ -1,5 +1,5 @@
 const {executeQuery, fetchAuthorizedStudent, facultyDB} = require('./database.js');
-const {delay, roleNumberBachelor, bachelorRoles} = require('./utilites.js');
+const {delay, roleNumber, bachelorRoles} = require('./utilites.js');
 
 async function syncUsers(interaction,client,bachelorRoles,masterRoles){
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -35,8 +35,8 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
                     //checks if this is the highest course the user's enrolled in
                     const isHighestCourse=(studentInfoInCheckedCohorts.length===0 || studentInfoInCheckedCohorts.find(e=>{
                       if (e.degree === element.degree) return e.course>element.course;
-                      if (e.degree === "Бакалавър") return true;
-                      return false;
+                      if (e.degree === "Бакалавър") return false;
+                      return true;
                       })==undefined)
                     //only changes username if this is the highest course
                     if (isHighestCourse)
@@ -45,22 +45,24 @@ async function syncUsers(interaction,client,bachelorRoles,masterRoles){
                       //console.log(JSON.stringify(result))
                       setName(member[0],username,myguild);
                     }
+                    let role;
                     if(element.degree === "Бакалавър"){
-                      const role = bachelorRoles[element.course];
+                      role = bachelorRoles[element.course];
                     getCourseRole(role,myguild).then(role =>{
                       setRole(role,member[0],myguild);
                     }) 
 
-                    if (isHighestCourse) removeRoles(member[0],role,myguild);
-
                     }else if(element.degree === "Магистър"){
                       //masters keep their roles from their bachelors'
-                      const role = masterRoles[element.course];
+                      role = masterRoles[element.course];
                       getCourseRole(role,myguild).then(role =>{
                         setRole(role,member[0],myguild);
                         
                       })
                     }
+                    //removes roles for higher courses if this is the highest course the (authorized) student's enrolled in
+                    if (isHighestCourse) removeRoles(member[0],role,myguild);
+
                     studentInfoInCheckedCohorts.push(element);
                   })
                 }})
@@ -118,6 +120,7 @@ return "Success";
 
 function clearRolesAndUsername(guildMember, guild)
 {
+  //skips bots and owner => assumes the bot has maximum possible rights in the server
   if (guildMember.user.bot||guild.ownerId==guildMember.user.id) {console.log("neposlushen\n\nneposlushen"); return;}
   //clears all roles sans @everyone/Administrator and server name
   let roles=guildMember.roles.cache.filter(role => role.name != "@everyone" && role.name != "Administrator");
@@ -196,12 +199,12 @@ function setRole(role,discordID,guild){
   }
   
   async function removeRoles(discordID,role,myguild){
-    const roleAsNumber = roleNumberBachelor[role];
+    const roleAsNumber = roleNumber[role];
     myguild.members.fetch(discordID)
     .then(member=>{  
       const allRoles = member.roles.cache;
       allRoles.forEach(element => {
-        const currentRole = roleNumberBachelor[element.name];
+        const currentRole = roleNumber[element.name];
         if (currentRole==undefined) return;
         if(roleAsNumber < currentRole){
           member.roles.remove(element)
