@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using AutoMapper;
 using FakeItEasy;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -8,6 +9,7 @@ using RichardSzalay.MockHttp;
 using UIS.API.Controllers;
 using UIS.DAL.DTO;
 using UIS.Services.Auth;
+using UIS.Services.Cohort;
 using Xunit;
 
 namespace UnitTests
@@ -21,9 +23,11 @@ namespace UnitTests
         {
             _mockHttp = new MockHttpMessageHandler();
             var httpClient = _mockHttp.ToHttpClient();
+            var mockMapper = A.Fake<IMapper>();
             var studentsRepository = A.Fake<IStudentsRepository>();
             var authService = new AuthService(studentsRepository); // Assuming AuthService takes HttpClient in constructor
-            _controller = new UserController(authService);
+            var cohortService = new CohortService(studentsRepository, mockMapper);
+            _controller = new UserController(authService, cohortService);
         }
 
         private void SetupMockResponse(string requestUri, HttpStatusCode statusCode, string responseBody)
