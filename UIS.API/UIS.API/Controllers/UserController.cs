@@ -197,11 +197,9 @@ namespace UIS.API.Controllers
         {
             using (var client = new HttpClient())
             {
-                var studentsGroupedByMajor = await _cohortService.GetAllStudentsFromMoodleAsync(client, "0dc14f4a2c85eadcf1e00618f0d1ec07");
+                var studentsDiscordData = await _cohortService.GetAllStudentsFromMoodleAsync(client, "0dc14f4a2c85eadcf1e00618f0d1ec07");
 
-                if (studentsGroupedByMajor == null) return BadRequest();
-
-                return Ok(studentsGroupedByMajor);
+                return Ok(studentsDiscordData);
             }
         }
     }

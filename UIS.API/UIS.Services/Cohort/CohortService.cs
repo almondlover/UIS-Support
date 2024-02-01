@@ -329,7 +329,7 @@ namespace UIS.Services.Cohort
             return groupedRecords;
         }
 
-        public async Task<List<DiscordStudentInfoDTO>?> GetAllStudentsFromMoodleAsync(HttpClient client, string jwt)
+        public async Task<List<DiscordStudentInfoDTO>> GetAllStudentsFromMoodleAsync(HttpClient client, string jwt)
         {
             //pulls all moodle cohorts
             var allMoodleCohorts = await GetMoodleCohortsAsync(client, jwt);
@@ -344,8 +344,8 @@ namespace UIS.Services.Cohort
                 var students = new List<DiscordStudentInfoDTO>();
 
                 var cohortNameElements = cohort.name.Split('/', StringSplitOptions.TrimEntries);
-                //returns null if the cohort format is incorrect
-                if (cohortNameElements.Count() < 3) return null;
+                //skips cohort if the cohort format is incorrect
+                if (cohortNameElements.Count() < 3) continue;
                 //extracts data needed for the discord bot from the cohort name
                 //assumes the following cohort naming convention: <faculty> / <specialty> / <year of degree enrollment>[ - <master's>]
                 var faculty = cohortNameElements[0];
@@ -354,8 +354,9 @@ namespace UIS.Services.Cohort
                 //gets year of enrollment and degree
                 var cohortYear = cohortNameElements[2].Split('-', StringSplitOptions.TrimEntries);
                 int year;
+                //skips cohort if the cohort format is incorrect
                 if (!int.TryParse(cohortYear[0], out year))
-                    return null;
+                    continue;
                 //assumes a 4-year bachelor's and 2-year master's; ideally moodle courses would hold data for yof education for obtaining it
                 int maxYears = 4;
                 if (cohortYear.Count() == 1)
