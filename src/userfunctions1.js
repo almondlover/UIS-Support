@@ -1,5 +1,5 @@
 const {executeQuery} = require('./database.js');
-const {delay, roleNumberBachelor, bachelorRoles} = require('./utilites.js');
+const {delay, roleNumber, bachelorRoles} = require('./utilites.js');
 
 async function syncUsers(interaction, client, bachelorRoles, masterRoles) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -136,12 +136,12 @@ function setRole(role,discordID,guild){
   }
   
   async function removeRoles(discordID,role,myguild){
-    const roleAsNumber = roleNumberBachelor[role];
+    const roleAsNumber = roleNumber[role];
     myguild.members.fetch(discordID)
     .then(member=>{
       const allRoles = member.roles.cache;
       allRoles.forEach(element => {
-        const currentRole = roleNumberBachelor[element.name];
+        const currentRole = roleNumber[element.name];
         if(roleAsNumber < currentRole){
           member.roles.remove(element)
           console.log(`Role ${element.name} removed for ${member.user.tag}`);
